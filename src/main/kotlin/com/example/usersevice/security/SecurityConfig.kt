@@ -12,24 +12,28 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter){
+class SecurityConfig(
+    private val jwtAuthFilter: JwtAuthFilter
+) {
 
     @Bean
-    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain{
+    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .csrf{it.disable()}
-            .sessionManagement {
-                it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            }
-            .authorizeHttpRequests {auth ->
+            .csrf { it.disable() }
+            .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(
                         "/api/auth/register",
                         "/api/auth/login",
                         "/ws/**",
-                        "/swagger-ui/**"
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/uploads/**"
                     ).permitAll()
                     .anyRequest().authenticated()
+            }
+            .sessionManagement {
+                it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
             .addFilterBefore(
                 jwtAuthFilter,
@@ -40,7 +44,7 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter){
     }
 
     @Bean
-    fun passwordEncoder(): PasswordEncoder{
+    fun passwordEncoder(): PasswordEncoder {
         return BCryptPasswordEncoder()
     }
 }

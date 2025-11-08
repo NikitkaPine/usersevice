@@ -8,6 +8,7 @@ import org.springframework.web.socket.WebSocketMessage
 import org.springframework.web.socket.WebSocketSession
 import java.util.concurrent.ConcurrentHashMap
 
+@Service
 class WebSocketService(
     private val objectMapper: ObjectMapper
 ){
