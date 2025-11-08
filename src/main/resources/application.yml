@@ -1,11 +1,11 @@
 spring:
   application:
-    name: user-service
+    name: user-sevice
 
   datasource:
     url: jdbc:postgresql://localhost:5432/userdb
-    username: devuser
-    password: devpass123
+    username: postgres
+    password: GHD263ghjk!
     driver-class-name: org.postgresql.Driver
 
   jpa:

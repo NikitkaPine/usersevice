@@ -1,7 +1,5 @@
 package com.example.usersevice.dto
 
-import org.aspectj.bridge.Message
-
 data class JSendResponse<T>(
     val status: String,
     val data: T? = null,

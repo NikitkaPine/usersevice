@@ -36,7 +36,9 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
     //Database
 	runtimeOnly("org.postgresql:postgresql")
-    //Tetsing
+    // OpenAPI/Swagger
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+    //Testing
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testImplementation("org.springframework.security:spring-security-test")

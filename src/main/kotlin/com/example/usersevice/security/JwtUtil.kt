@@ -29,8 +29,6 @@ class JwtUtil {
         val expiryDate = Date(now.time + expiration)
 
         return Jwts.builder()
-            .claim("id", "abc123")
-            .claim("role", "admin")
             .setSubject(userId.toString())
             .setIssuedAt(now)
             .setExpiration(expiryDate)

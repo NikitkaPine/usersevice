@@ -1,8 +1,9 @@
 package com.example.usersevice.dto
 
 data class AutoResponse(
-    val token: String,
-    val userId: Long
+    val token: String? = null,
+    val userId: Long? = null,
+    val error: String? = null
 )
 
 data class AvatarUploadResponse(
