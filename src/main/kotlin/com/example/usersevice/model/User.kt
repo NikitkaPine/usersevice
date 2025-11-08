@@ -17,7 +17,7 @@ data class User(
     var passwordHash: String,
 
     @Column(length = 500)
-    var avatarUri: String? = null,
+    var avatarUrl: String? = null,
 
     @Column(nullable = false, updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
