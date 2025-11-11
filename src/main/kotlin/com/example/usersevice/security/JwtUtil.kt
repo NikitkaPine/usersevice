@@ -18,20 +18,35 @@ class JwtUtil {
     private lateinit var secret: String
 
     @Value("\${jwt.expiration}")
-    private var expiration: Long = 86400000
+    private var accessExpiration: Long = 120000 //2 minutes
+    @Value("\${jwt.refresh-expiration}")
+    private var refreshExpiration: Long = 86400000 //24 hours
 
     private val key by lazy {
         Keys.hmacShaKeyFor(secret.toByteArray())
     }
 
-    fun generateToken(userId: Long): String{
+    fun generateAccessToken(userId: Long): String{
         val now = Date()
-        val expiryDate = Date(now.time + expiration)
+        val expiryDate = Date(now.time + accessExpiration)
 
         return Jwts.builder()
             .setSubject(userId.toString())
             .setIssuedAt(now)
             .setExpiration(expiryDate)
+            .claim("type", "access")
+            .signWith(key, SignatureAlgorithm.HS256)
+            .compact()
+    }
+    fun generateRefreshToken(userId: Long): String {
+        val now = Date()
+        val expiryDate = Date(now.time + refreshExpiration)
+
+        return Jwts.builder()
+            .setSubject(userId.toString())
+            .setIssuedAt(now)
+            .setExpiration(expiryDate)
+            .claim("type", "refresh")
             .signWith(key, SignatureAlgorithm.HS256)
             .compact()
     }
@@ -44,16 +59,16 @@ class JwtUtil {
                 .parseClaimsJws(token)
             true
         }catch (e: ExpiredJwtException) {
-            println("JWT истёк: ${e.message}")
+            println("JWT expired: ${e.message}")
             false
         } catch (e: MalformedJwtException) {
-            println("Неверный формат JWT")
+            println("Invalid format JWT")
             false
         } catch (e: SignatureException) {
-            println("Неверная подпись JWT")
+            println("Invalid signature JWT")
             false
         } catch (e: Exception) {
-            println("Ошибка валидации JWT: ${e.message}")
+            println("Validation error JWT: ${e.message}")
             false
         }
     }
@@ -67,4 +82,22 @@ class JwtUtil {
 
         return claims.subject.toLong()
     }
+
+    fun getTokenType(token: String): String? {
+        return try {
+            val claims: Claims = Jwts.parser()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .body
+            claims["type"] as? String
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun getAccessTokenExpirationInSeconds(): Long {
+        return accessExpiration / 1000
+    }
+
 }

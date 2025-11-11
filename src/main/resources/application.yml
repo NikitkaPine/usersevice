@@ -24,13 +24,17 @@ spring:
       max-file-size: 5MB
       max-request-size: 5MB
 
+  task:
+    scheduling:
+      enabled: true
+
 server:
   port: 8080
 
 jwt:
   secret: "your-very-long-and-secure-secret-key-change-this-in-production-minimum-256-bits"
-  expiration: 120 000 # 24 hours in milliseconds
-
+  expiration: 120000
+  refresh-expiration: 86400000
 storage:
   avatar-path: ./uploads/avatars
 

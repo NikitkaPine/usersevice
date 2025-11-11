@@ -18,6 +18,7 @@ class UserService(
     private val passwordEncoder: PasswordEncoder,
     private val jwtUtil: JwtUtil,
     private val websocketService: WebSocketService,
+    private val refreshTokenService: RefreshTokenService,
     private val storageService: StorageService
 ) {
 
@@ -32,12 +33,7 @@ class UserService(
         )
 
         val savedUser = userRepository.save(user)
-        val token = jwtUtil.generateToken(savedUser.id!!)
-
-        return AuthResponse(
-            token = token,
-            userId = savedUser.id!!
-        )
+        return generateTokenPair(savedUser.id!!)
     }
 
     fun login(requests: LoginRequest): AuthResponse{
@@ -48,11 +44,50 @@ class UserService(
             throw IllegalArgumentException("Invalid credentials")
         }
 
-        val token =jwtUtil.generateToken(user.id!!)
+        return generateTokenPair(user.id!!)
+    }
+
+    @Transactional
+    fun refreshToken(refreshToken: String): AuthResponse {
+        val tokenEntity = refreshTokenService.findByToken(refreshToken)
+            .orElseThrow { IllegalArgumentException("Invalid refresh token") }
+
+        if (tokenEntity.revoked) {
+            throw IllegalArgumentException("Refresh token has been revoked")
+        }
+
+        if (!refreshTokenService.verifyExpiration(tokenEntity)) {
+            throw IllegalArgumentException("Refresh token expired")
+        }
+
+        if (!jwtUtil.validateToken(refreshToken)) {
+            throw IllegalArgumentException("Invalid refresh token")
+        }
+
+        val userId = jwtUtil.getUserIdFromToken(refreshToken)
+
+        if (jwtUtil.getTokenType(refreshToken) != "refresh") {
+            throw IllegalArgumentException("Token is not a refresh token")
+        }
+
+        return generateTokenPair(userId)
+    }
+
+    private fun generateTokenPair(userId: Long): AuthResponse {
+        val accessToken = jwtUtil.generateAccessToken(userId)
+        val refreshToken = jwtUtil.generateRefreshToken(userId)
+
+        refreshTokenService.createRefreshToken(
+            userId = userId,
+            token = refreshToken,
+            expiresAt = LocalDateTime.now().plusDays(1)
+        )
 
         return AuthResponse(
-            token = token,
-            userId = user.id!!
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            userId = userId,
+            expiresIn = jwtUtil.getAccessTokenExpirationInSeconds()
         )
     }
 
@@ -67,7 +102,6 @@ class UserService(
         user.updatedAt = LocalDateTime.now()
         userRepository.save(user)
 
-        // Notify via WebSocket
         websocketService.notifyAvatarChange(userId, avatarUrl)
 
         return avatarUrl
@@ -82,7 +116,7 @@ class UserService(
 
         userRepository.delete(user)
 
-        // Disconnect WebSocket sessions
+        refreshTokenService.deleteByUserId(userId)
         websocketService.disconnectUser(userId)
 
     }
