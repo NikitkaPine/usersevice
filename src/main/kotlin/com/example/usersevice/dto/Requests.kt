@@ -20,3 +20,7 @@ data class LoginRequest(
     @field:NotBlank(message = "Password is required")
     val password: String
 )
+data class RefreshTokenRequest(
+    @field:NotBlank(message = "Refresh token is required")
+    val refreshToken: String
+)

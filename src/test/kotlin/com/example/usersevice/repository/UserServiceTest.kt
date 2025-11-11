@@ -3,7 +3,6 @@ package com.example.usersevice.repository
 import com.example.usersevice.dto.LoginRequest
 import com.example.usersevice.dto.RegisterRequests
 import com.example.usersevice.model.User
-import com.example.usersevice.repository.UserRepository
 import com.example.usersevice.security.JwtUtil
 import com.example.usersevice.service.StorageService
 import com.example.usersevice.service.UserService
@@ -60,17 +59,17 @@ class UserServiceTest {
         every{ userRepository.existsByIdentifier(request.identifier)} returns false
         every{passwordEncoder.encode(request.password)}returns hashedPassword
         every{userRepository.save(any())}returns savedUser
-        every{jwtUtil.generateToken(1L)} returns token
+        every{jwtUtil.generateAccessToken(1L)} returns token
 
         val result = userService.register(request)
 
-        assertEquals(token, result.token)
+        assertEquals(token, result.accessToken)
         assertEquals(1L, result.userId)
 
         verify { userRepository.existsByIdentifier(request.identifier) }
         verify { passwordEncoder.encode(request.password) }
         verify { userRepository.save(any()) }
-        verify { jwtUtil.generateToken(1L) }
+        verify { jwtUtil.generateAccessToken(1L) }
     }
     @Test
     fun `register should throw exception when user already exists`() {
@@ -108,13 +107,13 @@ class UserServiceTest {
 
         every { userRepository.findByIdentifier(request.identifier) } returns Optional.of(user)
         every { passwordEncoder.matches(request.password, user.passwordHash) } returns true
-        every { jwtUtil.generateToken(1L) } returns token
+        every { jwtUtil.generateAccessToken(1L) } returns token
 
         // When
         val result = userService.login(request)
 
         // Then
-        assertEquals(token, result.token)
+        assertEquals(token, result.accessToken)
         assertEquals(1L, result.userId)
     }
 
