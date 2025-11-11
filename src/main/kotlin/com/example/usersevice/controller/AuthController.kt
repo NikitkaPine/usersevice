@@ -22,7 +22,7 @@ class AuthController(
     )
     fun register(
         @Valid @RequestBody request: RegisterRequests
-    ): ResponseEntity<JSendResponse<AutoResponse>> {
+    ): ResponseEntity<JSendResponse<*>> {
         return try {
             val response = userService.register(request)
             ResponseEntity
@@ -31,11 +31,11 @@ class AuthController(
         } catch (e: IllegalArgumentException) {
             ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(JSendResponse.success(AutoResponse(error = e.message)))
+                .body(JSendResponse.fail(e.message ?: "User already exists"))
         } catch (e: Exception) {
             ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(JSendResponse.success(AutoResponse(error = "Registration failed")))
+                .body(JSendResponse.error("Internal server error"))
         }
     }
 
@@ -46,18 +46,18 @@ class AuthController(
     )
     fun login(
         @Valid @RequestBody request: LoginRequest
-    ): ResponseEntity<JSendResponse<AutoResponse>>{
+    ): ResponseEntity<JSendResponse<*>>{
         return try {
             val response = userService.login(request)
             ResponseEntity.ok(JSendResponse.success(response))
         } catch (e: IllegalArgumentException) {
             ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(JSendResponse.success(AutoResponse(error = "Registration failed")))
+                .body(JSendResponse.fail(e.message ?: "Invalid credentials"))
         } catch (e: Exception) {
             ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(JSendResponse.success(AutoResponse(error = "Registration failed")))
+                .body(JSendResponse.error("Internal server error"))
         }
     }
 
