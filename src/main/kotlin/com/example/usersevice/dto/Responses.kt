@@ -1,6 +1,6 @@
 package com.example.usersevice.dto
 
-data class AutoResponse(
+data class AuthResponse(
     val token: String? = null,
     val userId: Long? = null,
     val error: String? = null

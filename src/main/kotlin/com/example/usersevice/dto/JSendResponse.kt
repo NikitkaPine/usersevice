@@ -6,17 +6,17 @@ data class JSendResponse<T>(
     val message: String? = null
 ){
     companion object{
-        fun <T> success(data:T) = JSendResponse(
+        fun <T> success(data:T):JSendResponse<T> = JSendResponse(
             status = "success",
             data = data
         )
 
-        fun <T> fail(data:T) = JSendResponse(
+        fun <T> fail(data:T): JSendResponse<T> = JSendResponse(
             status = "fail",
             data = data
         )
 
-        fun error (message: String) = JSendResponse<Unit>(
+        fun error (message: String): JSendResponse<Unit> = JSendResponse(
             status = "error",
             message = message
         )
