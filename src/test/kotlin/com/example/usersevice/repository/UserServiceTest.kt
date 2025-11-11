@@ -4,6 +4,7 @@ import com.example.usersevice.dto.LoginRequest
 import com.example.usersevice.dto.RegisterRequests
 import com.example.usersevice.model.User
 import com.example.usersevice.security.JwtUtil
+import com.example.usersevice.service.RefreshTokenService
 import com.example.usersevice.service.StorageService
 import com.example.usersevice.service.UserService
 import com.example.usersevice.service.WebSocketService
@@ -13,8 +14,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.transaction.annotation.Transactional
 import java.util.*
 
+
+@Transactional
 class UserServiceTest {
     private lateinit var userRepository: UserRepository
     private lateinit var passwordEncoder: PasswordEncoder
@@ -22,6 +26,7 @@ class UserServiceTest {
     private lateinit var webSocketService: WebSocketService
     private lateinit var storageService: StorageService
     private lateinit var userService: UserService
+    private lateinit var refreshTokenService: RefreshTokenService
 
     @BeforeEach
     fun setup(){
@@ -30,12 +35,14 @@ class UserServiceTest {
         jwtUtil = mockk()
         webSocketService = mockk()
         storageService = mockk()
+        refreshTokenService = mockk(relaxed = true)
 
         userService = UserService(
             userRepository,
             passwordEncoder,
             jwtUtil,
             webSocketService,
+            refreshTokenService,
             storageService
         )
     }
@@ -54,22 +61,30 @@ class UserServiceTest {
             passwordHash = hashedPassword
         )
 
-        val token = "jwt_token"
+        val accessToken = "access_token"
+        val refreshToken = "refresh_token"
 
         every{ userRepository.existsByIdentifier(request.identifier)} returns false
         every{passwordEncoder.encode(request.password)}returns hashedPassword
-        every{userRepository.save(any())}returns savedUser
-        every{jwtUtil.generateAccessToken(1L)} returns token
+        every { userRepository.save(any()) } returns savedUser
+        every { jwtUtil.generateAccessToken(1L) } returns accessToken
+        every { jwtUtil.generateRefreshToken(1L) } returns refreshToken
+        every { jwtUtil.getAccessTokenExpirationInSeconds() } returns 3600L
 
         val result = userService.register(request)
 
-        assertEquals(token, result.accessToken)
+        assertEquals(accessToken, result.accessToken)
+        assertEquals(refreshToken, result.refreshToken)
         assertEquals(1L, result.userId)
+        assertEquals("Bearer", result.tokenType)
+        assertEquals(3600L, result.expiresIn)
 
         verify { userRepository.existsByIdentifier(request.identifier) }
         verify { passwordEncoder.encode(request.password) }
         verify { userRepository.save(any()) }
         verify { jwtUtil.generateAccessToken(1L) }
+        verify { jwtUtil.generateRefreshToken(1L) }
+        verify { refreshTokenService.createRefreshToken(1L, refreshToken, any()) }
     }
     @Test
     fun `register should throw exception when user already exists`() {
@@ -103,18 +118,25 @@ class UserServiceTest {
             identifier = request.identifier,
             passwordHash = "hashed_password"
         )
-        val token = "jwt_token"
+        val accessToken = "access_token"
+        val refreshToken = "refresh_token"
 
         every { userRepository.findByIdentifier(request.identifier) } returns Optional.of(user)
         every { passwordEncoder.matches(request.password, user.passwordHash) } returns true
-        every { jwtUtil.generateAccessToken(1L) } returns token
+        every { jwtUtil.generateAccessToken(1L) } returns accessToken
+        every { jwtUtil.generateRefreshToken(1L) } returns refreshToken
+        every { jwtUtil.getAccessTokenExpirationInSeconds() } returns 3600L
 
         // When
         val result = userService.login(request)
 
         // Then
-        assertEquals(token, result.accessToken)
+        assertEquals(accessToken, result.accessToken)
+        assertEquals(refreshToken, result.refreshToken)
         assertEquals(1L, result.userId)
+
+        verify { userRepository.findByIdentifier(request.identifier) }
+        verify { passwordEncoder.matches(request.password, user.passwordHash) }
     }
 
     @Test
@@ -161,7 +183,36 @@ class UserServiceTest {
 
         // Then
         assertEquals(_avatarUrl, result)
+        verify { userRepository.save(any()) }
         verify { webSocketService.notifyAvatarChange(userId, _avatarUrl) }
+    }
+
+    @Test
+    fun `updateAvatar should delete old avatar when exists`() {
+        // Given
+        val userId = 1L
+        val oldAvatarUrl = "/uploads/avatars/old-avatar.jpg"
+        val newAvatarUrl = "/uploads/avatars/new-avatar.jpg"
+        val user = User(
+            id = userId,
+            identifier = "tester1",
+            passwordHash = "hashed",
+            avatarUrl = oldAvatarUrl
+        )
+
+        every { userRepository.findById(userId) } returns Optional.of(user)
+        every { storageService.deleteAvatar(any()) } just Runs
+        every { userRepository.save(any()) } answers { firstArg() }
+        every { webSocketService.notifyAvatarChange(userId, newAvatarUrl) } just Runs
+
+        // When
+        val result = userService.updateAvatar(userId, newAvatarUrl)
+
+        // Then
+        assertEquals(newAvatarUrl, result)
+        verify(exactly = 1) { storageService.deleteAvatar(oldAvatarUrl) }
+        verify(exactly = 1) { userRepository.save(any()) }
+        verify(exactly = 1) { webSocketService.notifyAvatarChange(userId, newAvatarUrl) }
     }
 
     @Test
@@ -188,6 +239,38 @@ class UserServiceTest {
         verify { storageService.deleteAvatar(user.avatarUrl!!) }
         verify { userRepository.delete(user) }
         verify { webSocketService.disconnectUser(userId) }
+    }
+    @Test
+    fun `getUser should return user response`() {
+        // Given
+        val userId = 1L
+        val user = User(
+            id = userId,
+            identifier = "test@example.com",
+            passwordHash = "hashed"
+        )
+
+        every { userRepository.findById(userId) } returns Optional.of(user)
+
+        // When
+        val result = userService.getUser(userId)
+
+        // Then
+        assertEquals(userId, result.id)
+        assertEquals(user.identifier, result.identifier)
+    }
+
+    @Test
+    fun `getUser should throw exception when user not found`() {
+        // Given
+        val userId = 999L
+
+        every { userRepository.findById(userId) } returns Optional.empty()
+
+        // When & Then
+        assertThrows<IllegalArgumentException> {
+            userService.getUser(userId)
+        }
     }
 
 }

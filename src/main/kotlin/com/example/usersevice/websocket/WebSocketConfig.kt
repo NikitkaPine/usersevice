@@ -16,6 +16,6 @@ class WebSocketConfig(
     override fun registerWebSocketHandlers(registry: WebSocketHandlerRegistry) {
         registry
             .addHandler(userWebSocketHandler, "/ws/user")
-            .setAllowedOrigins("*") // В продакшене указать конкретные домены
+            .setAllowedOrigins("*")
     }
 }

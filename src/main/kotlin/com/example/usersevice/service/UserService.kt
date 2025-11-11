@@ -66,7 +66,6 @@ class UserService(
 
         val userId = jwtUtil.getUserIdFromToken(refreshToken)
 
-        // Проверяем что токен типа refresh
         if (jwtUtil.getTokenType(refreshToken) != "refresh") {
             throw IllegalArgumentException("Token is not a refresh token")
         }
@@ -81,7 +80,7 @@ class UserService(
         refreshTokenService.createRefreshToken(
             userId = userId,
             token = refreshToken,
-            expiresAt = LocalDateTime.now().plusDays(30)
+            expiresAt = LocalDateTime.now().plusDays(1)
         )
 
         return AuthResponse(
@@ -103,7 +102,6 @@ class UserService(
         user.updatedAt = LocalDateTime.now()
         userRepository.save(user)
 
-        // Notify via WebSocket
         websocketService.notifyAvatarChange(userId, avatarUrl)
 
         return avatarUrl

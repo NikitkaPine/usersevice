@@ -31,4 +31,19 @@ class ExeptionHandler {
             .status(HttpStatus.BAD_REQUEST)
             .body(JSendResponse.fail(errors))
     }
+
+    @ExceptionHandler(Exception::class)
+    fun handleGeneralException(e: Exception):
+            ResponseEntity<JSendResponse<*>> {
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(JSendResponse.error(e.message ?: "Internal server error"))
+    }
+
+    @ExceptionHandler(SecurityException::class)
+    fun handleUnauthorizedException(e: SecurityException): ResponseEntity<JSendResponse<*>> {
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(JSendResponse.fail(e.message ?: "Unauthorized"))
+    }
 }

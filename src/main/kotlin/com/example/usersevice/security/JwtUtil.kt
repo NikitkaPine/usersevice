@@ -59,16 +59,16 @@ class JwtUtil {
                 .parseClaimsJws(token)
             true
         }catch (e: ExpiredJwtException) {
-            println("JWT истёк: ${e.message}")
+            println("JWT expired: ${e.message}")
             false
         } catch (e: MalformedJwtException) {
-            println("Неверный формат JWT")
+            println("Invalid format JWT")
             false
         } catch (e: SignatureException) {
-            println("Неверная подпись JWT")
+            println("Invalid signature JWT")
             false
         } catch (e: Exception) {
-            println("Ошибка валидации JWT: ${e.message}")
+            println("Validation error JWT: ${e.message}")
             false
         }
     }
