@@ -24,6 +24,7 @@ class JwtAuthFilter(
 
         if (path.startsWith("/api/auth/") ||
             path.startsWith("/swagger-ui") ||
+            path.startsWith("/swagger-ui.html") ||
             path.startsWith("/v3/api-docs")) {
             filterChain.doFilter(request, response)
             return

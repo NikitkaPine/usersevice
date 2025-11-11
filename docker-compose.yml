@@ -6,11 +6,11 @@ services:
     environment:
       POSTGRES_DB: userdb
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: GHD263ghjk!
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - userdb-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -29,7 +29,7 @@ services:
       # Database
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/userdb
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_PASSWORD: GHD263ghjk!
       
       # JWT
       JWT_SECRET: "production-secret-key-change-this-to-secure-random-256-bit-string"
@@ -53,7 +53,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
+  userdb-data:
     driver: local
   avatar_storage:
     driver: local
