@@ -1,0 +1,63 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:alpine
+    container_name: usersevice-postgres
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - usersevice-network
+
+  # User Service Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: usersevice-app
+    environment:
+      # Database
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/userdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      
+      # JWT
+      JWT_SECRET: "production-secret-key-change-this-to-secure-random-256-bit-string"
+      JWT_EXPIRATION: 3600000
+      JWT_REFRESH_EXPIRATION: 2592000000
+      
+      # Storage
+      STORAGE_AVATAR_PATH: /app/uploads/avatars
+      
+      # Logging
+      LOGGING_LEVEL_COM_EXAMPLE_USERSEVICE: INFO
+    ports:
+      - "8080:8080"
+    volumes:
+      - avatar_storage:/app/uploads/avatars
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - usersevice-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  avatar_storage:
+    driver: local
+
+networks:
+  usersevice-network:
+    driver: bridge

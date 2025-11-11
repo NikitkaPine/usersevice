@@ -1,10 +1,9 @@
 package com.example.usersevice.service
 
-import com.example.usersevice.dto.AutoResponse
+import com.example.usersevice.dto.AuthResponse
 import com.example.usersevice.dto.LoginRequest
 import com.example.usersevice.dto.RegisterRequests
 import com.example.usersevice.dto.UserResponse
-import com.example.usersevice.dto.WebSocket
 import com.example.usersevice.model.User
 import com.example.usersevice.repository.UserRepository
 import com.example.usersevice.security.JwtUtil
@@ -23,7 +22,7 @@ class UserService(
 ) {
 
     @Transactional
-    fun register(requests: RegisterRequests): AutoResponse{
+    fun register(requests: RegisterRequests): AuthResponse{
         if(userRepository.existsByIdentifier(requests.identifier)){
             throw IllegalArgumentException("User with this identifier already exists")
         }
@@ -35,13 +34,13 @@ class UserService(
         val savedUser = userRepository.save(user)
         val token = jwtUtil.generateToken(savedUser.id!!)
 
-        return AutoResponse(
+        return AuthResponse(
             token = token,
             userId = savedUser.id!!
         )
     }
 
-    fun login(requests: LoginRequest): AutoResponse{
+    fun login(requests: LoginRequest): AuthResponse{
         val user = userRepository.findByIdentifier(requests.identifier)
             .orElseThrow{ IllegalArgumentException("Invalid credentials") }
 
@@ -51,7 +50,7 @@ class UserService(
 
         val token =jwtUtil.generateToken(user.id!!)
 
-        return AutoResponse(
+        return AuthResponse(
             token = token,
             userId = user.id!!
         )
