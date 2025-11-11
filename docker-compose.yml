@@ -2,7 +2,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:alpine
-    container_name: usersevice-postgres
+    container_name: usersevice-postgresql
     environment:
       POSTGRES_DB: userdb
       POSTGRES_USER: postgres
@@ -24,7 +24,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: usersevice-app
+    container_name: usersevice-api
     environment:
       # Database
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/userdb
