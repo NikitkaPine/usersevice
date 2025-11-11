@@ -29,12 +29,12 @@ server:
 
 jwt:
   secret: "your-very-long-and-secure-secret-key-change-this-in-production-minimum-256-bits"
-  expiration: 86400000 # 24 hours in milliseconds
+  expiration: 120 000 # 24 hours in milliseconds
 
 storage:
   avatar-path: ./uploads/avatars
 
 logging:
   level:
-    com.example.userservice: DEBUG
+    com.example.usersevice: DEBUG
     org.springframework.security: DEBUG
