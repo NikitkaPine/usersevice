@@ -17,6 +17,11 @@ class RefreshTokenService(
     fun createRefreshToken(userId: Long, token: String, expiresAt: LocalDateTime): RefreshToken {
         refreshTokenRepository.deleteByUserId(userId)
 
+        val oldTokens = refreshTokenRepository.findByUserId(userId)
+        if (oldTokens.isNotEmpty()) {
+            refreshTokenRepository.deleteByUserId(userId)
+        }
+
         val refreshToken = RefreshToken(
             token = token,
             userId = userId,
@@ -60,6 +65,5 @@ class RefreshTokenService(
             .size
 
         refreshTokenRepository.deleteByExpiresAtBefore(LocalDateTime.now())
-        println("🧹 Cleaned up $count expired refresh tokens")
     }
 }
