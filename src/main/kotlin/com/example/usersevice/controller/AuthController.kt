@@ -61,6 +61,30 @@ class AuthController(
         }
     }
 
+    @PostMapping("/refresh")
+    @Operation(
+        summary = "Refresh access token",
+        description = "Use refresh token to get a new access/refresh token pair"
+    )
+    fun refreshToken(
+        @Valid @RequestBody request: RefreshTokenRequest
+    ): ResponseEntity<JSendResponse<*>>{
+        return try {
+            val response = userService.refreshToken(request.refreshToken)
+            ResponseEntity.ok(JSendResponse.success(response))
+        } catch (e: IllegalArgumentException) {
+            ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(JSendResponse.fail(mapOf("error" to e.message)))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(JSendResponse.error("Token refresh failed"))
+        }
+    }
+
+
 
 
 }
